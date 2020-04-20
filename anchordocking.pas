@@ -2592,6 +2592,7 @@ begin
   if FOverlappingForm=nil then
     IdleConnected:=false
   else begin
+    MousePos := Point(0,0);
     GetCursorPos(MousePos);
     Bounds.TopLeft:=FOverlappingForm.ClientToScreen(point(0,0));
     Bounds.BottomRight:=FOverlappingForm.ClientToScreen(point(FOverlappingForm.Width,FOverlappingForm.Height));
@@ -2690,9 +2691,6 @@ begin
 end;
 
 procedure TAnchorDockMaster.SetDockSitesCanBeMinimized(AValue: boolean);
-var
-  i:integer;
-  Site: TAnchorDockHostSite;
 begin
   if FDockSitesCanBeMinimized=AValue then Exit;
   FDockSitesCanBeMinimized:=AValue;
@@ -2701,6 +2699,7 @@ begin
   EnableAllAutoSizing;
   OptionsChanged;
 end;
+
 procedure TAnchorDockMaster.SetScaleOnResize(AValue: boolean);
 begin
   if FScaleOnResize=AValue then Exit;
@@ -3903,7 +3902,6 @@ procedure TAnchorDockMaster.UpdateHeaders;
 var
   i: Integer;
   AControl: TControl;
-  AHostSite: TAnchorDockHostSite;
 begin
     for i:=0 to ControlCount-1 do begin
       AControl:=Controls[i];
@@ -4373,8 +4371,6 @@ begin
 end;
 
 procedure TAnchorDockHostSite.FreePages;
-var
-  i:Integer;
 begin
   FreeAndNil(FPages);
 end;
@@ -5711,11 +5707,7 @@ begin
   OldCaption:=Caption;
   Caption:=NewCaption;
   //debugln(['TAnchorDockHostSite.UpdateDockCaption Caption="',Caption,'" NewCaption="',NewCaption,'" HasParent=',Parent<>nil,' ',DbgSName(Header)]);
-  if {((Parent=nil) and DockMaster.HideHeaderCaptionFloatingControl)
-  or (not DockMaster.ShowHeaderCaption)}false then
-    Header.Caption:=''
-  else
-    Header.Caption:=Caption;
+  Header.Caption:=Caption;
   if OldCaption<>Caption then begin
     //debugln(['TAnchorDockHostSite.UpdateDockCaption Caption="',Caption,'" NewCaption="',NewCaption,'" HasParent=',Parent<>nil]);
     if Parent is TAnchorDockHostSite then
@@ -7208,8 +7200,6 @@ end;
 
 procedure TAnchorDockSplitter.SaveLayout(
   LayoutNode: TAnchorDockLayoutTreeNode);
-var
-  NewLeft, NewTop: Integer;
 begin
   if ResizeAnchor in [akLeft,akRight] then
     LayoutNode.NodeType:=adltnSplitterVertical
