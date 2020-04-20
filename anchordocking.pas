@@ -5212,15 +5212,16 @@ begin
   end;
   try
     // check ShrinkSplitter
+    if not (AnchorSide[ShrinkSplitterSide].Control is TAnchorDockSplitter) then exit;
     ShrinkSplitter:=TAnchorDockSplitter(AnchorSide[ShrinkSplitterSide].Control);
-    if not (ShrinkSplitter is TAnchorDockSplitter) then exit;
+
     // check if EnlargeSpitterSide is a neighbor ShrinkSplitterSide
     if (EnlargeSpitterSide<>ClockwiseAnchor[ShrinkSplitterSide])
     and (EnlargeSpitterSide<>OppositeAnchor[ClockwiseAnchor[ShrinkSplitterSide]]) then
       exit;
     // check EnlargeSpitter
+    if not (AnchorSide[EnlargeSpitterSide].Control is TAnchorDockSplitter) then exit;
     EnlargeSplitter:=TAnchorDockSplitter(AnchorSide[EnlargeSpitterSide].Control);
-    if not (EnlargeSplitter is TAnchorDockSplitter) then exit;
     // check if KeptSide is anchored to a splitter or parent
     KeptSide:=OppositeAnchor[EnlargeSpitterSide];
     KeptAnchorControl:=AnchorSide[KeptSide].Control;
@@ -5304,16 +5305,18 @@ var
 begin
   Result:=false;
   // check if there is a splitter at Side
+  if not (AnchorSide[Side].Control is TAnchorDockSplitter) then exit;
   Splitter:=TAnchorDockSplitter(AnchorSide[Side].Control);
-  if not (Splitter is TAnchorDockSplitter) then exit;
+
   // check if there is a splitter at clockwise Side
   CWSide:=ClockwiseAnchor[Side];
+  if not (AnchorSide[CWSide].Control is TAnchorDockSplitter) then exit;
   CWSplitter:=TAnchorDockSplitter(AnchorSide[CWSide].Control);
-  if not (CWSplitter is TAnchorDockSplitter) then exit;
+
   // check if there is a splitter at counter clockwise Side
   CCWSide:=OppositeAnchor[CWSide];
+  if not (AnchorSide[CCWSide].Control is TAnchorDockSplitter) then exit;
   CCWSplitter:=TAnchorDockSplitter(AnchorSide[CCWSide].Control);
-  if not (CCWSplitter is TAnchorDockSplitter) then exit;
   // check if neighbor splitters end at Splitter
   if CWSplitter.AnchorSide[Side].Control<>Splitter then exit;
   if CCWSplitter.AnchorSide[Side].Control<>Splitter then exit;
