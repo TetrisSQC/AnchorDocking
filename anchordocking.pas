@@ -114,7 +114,7 @@ const EmptyMouseTimeStartX=low(Integer);
       MouseNoMoveDelta=5;
       MouseNoMoveTime=500;
       HideOverlappingFormByMouseLoseTime=500;
-      ButtonBorderSpacingAround=4;
+      ButtonBorderSpacingAround=2;
       OppositeAnchorKind2Align: array[TAnchorKind] of TAlign = (
         alBottom, // akTop,
         alRight,  // akLeft,
@@ -6399,7 +6399,7 @@ begin
     Hint:=adrsClose;
     OnClick:=@CloseButtonClick;
     Glyphs.LoadFromResourceName(hinstance, 'ANCHOR_CLOSE');
-    AutoSize:= true;
+    AutoSize:=true;
   end;
   FMinimizeButton:=TAnchorBaseButton.Create(Self);
   with FMinimizeButton do begin

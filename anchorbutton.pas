@@ -14,6 +14,7 @@ type
    FGlyphs: TBitmap;
    FFocused: boolean;
    FPressed: boolean;
+   FFirstRun: Boolean;
 
    procedure SetGlyphs(const ABitmap: TBitmap);
  protected
@@ -41,6 +42,7 @@ begin
   Width := 23;
   Height := 22;
   FGlyphs := TBitmap.Create;
+  FFirstRun := true;
 end;
 
 destructor TAnchorBaseButton.Destroy;
@@ -67,6 +69,13 @@ begin
   end;
   w := FGlyphs.Width div 4;
   R := Rect(index * w, 0, (index + 1) * w, FGlyphs.Height);
+
+  if FFirstRun then
+  begin
+    FFirstRun := false;
+  Width := ScaleDesignToForm(Width);
+  Height := ScaleDesignToForm(Height);
+  end;
 
   Canvas.CopyRect(Rect(0, 0, Width, Height), FGlyphs.Canvas, R);
 end;
@@ -111,6 +120,7 @@ end;
 procedure TAnchorBaseButton.SetGlyphs(const ABitmap: TBitmap);
 begin
   FGlyphs.Assign(ABitmap);
+  //Width := FGlyphs.Width div 4;
   invalidate;
 end;
 
