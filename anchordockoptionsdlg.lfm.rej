@@ -1,0 +1,17 @@
+***************
+*** 272,278 ****
+          // custom dock site
+          LayoutNode:=FTree.NewNode(FTree.Root);
+          LayoutNode.NodeType:=adltnCustomSite;
+-         LayoutNode.Assign(AForm);
+          // can have one normal dock site
+          Site:=TAnchorDockManager(AForm.DockManager).GetChildSite;
+          if Site<>nil then begin
+--- 272,278 ----
+          // custom dock site
+          LayoutNode:=FTree.NewNode(FTree.Root);
+          LayoutNode.NodeType:=adltnCustomSite;
++         LayoutNode.Assign(AForm,false,false);
+          // can have one normal dock site
+          Site:=TAnchorDockManager(AForm.DockManager).GetChildSite;
+          if Site<>nil then begin

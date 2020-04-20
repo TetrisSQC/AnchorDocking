@@ -1,0 +1,81 @@
+***************
+*** 137,142 ****
+      property Monitor: integer read FMonitor write SetMonitor;
+      property HeaderPosition: TADLHeaderPosition read FHeaderPosition write SetHeaderPosition;
+      property TabPosition: TTabPosition read FTabPosition write SetTabPosition;
+      function Count: integer;
+      function IsSplitter: boolean;
+      function IsRootWindow: boolean;
+--- 139,145 ----
+      property Monitor: integer read FMonitor write SetMonitor;
+      property HeaderPosition: TADLHeaderPosition read FHeaderPosition write SetHeaderPosition;
+      property TabPosition: TTabPosition read FTabPosition write SetTabPosition;
++     property Minimized: Boolean read FMinimized write SetMinimized;
+      function Count: integer;
+      function IsSplitter: boolean;
+      function IsRootWindow: boolean;
+***************
+*** 1122,1133 ****
+    else
+      BoundsRect:=AControl.BoundsRect;
+    Align:=AControl.Align;
+    if (AControl.Parent=nil) and (AControl is TCustomForm) then begin
+      WindowState:=TCustomForm(AControl).WindowState;
+      Monitor:=TCustomForm(AControl).Monitor.MonitorNum;
+      WorkAreaRect:=TCustomForm(AControl).Monitor.WorkareaRect;
+-   end else
+-     WindowState:=GetParentForm(AControl).WindowState;
+    if AControl is TCustomTabControl then
+      TabPosition:=TCustomTabControl(AControl).TabPosition
+    else
+--- 1134,1151 ----
+    else
+      BoundsRect:=AControl.BoundsRect;
+    Align:=AControl.Align;
++   Minimized:=AMinimized;
+    if (AControl.Parent=nil) and (AControl is TCustomForm) then begin
+      WindowState:=TCustomForm(AControl).WindowState;
+      Monitor:=TCustomForm(AControl).Monitor.MonitorNum;
+      WorkAreaRect:=TCustomForm(AControl).Monitor.WorkareaRect;
++   end else begin
++     ParentForm:=GetParentForm(AControl);
++     if assigned(ParentForm) then
++       WindowState:=ParentForm.WindowState
++     else
++       WindowState:=wsNormal;
++   end;
+    if AControl is TCustomTabControl then
+      TabPosition:=TCustomTabControl(AControl).TabPosition
+    else
+***************
+*** 1236,1241 ****
+                                            ADLHeaderPositionNames[adlhpAuto]);
+    Config.SetDeleteValue('Header/TabPosition',ADLTabPostionNames[TabPosition],
+                                               ADLTabPostionNames[tpTop]);
+    Config.SetDeleteValue('Monitor',Monitor,0);
+    Config.SetDeleteValue('ChildCount',Count,0);
+    for i:=1 to Count do begin
+--- 1256,1262 ----
+                                            ADLHeaderPositionNames[adlhpAuto]);
+    Config.SetDeleteValue('Header/TabPosition',ADLTabPostionNames[TabPosition],
+                                               ADLTabPostionNames[tpTop]);
++   Config.SetDeleteValue('Minimized',Minimized,False);
+    Config.SetDeleteValue('Monitor',Monitor,0);
+    Config.SetDeleteValue('ChildCount',Count,0);
+    for i:=1 to Count do begin
+***************
+*** 1269,1274 ****
+                                                 ADLHeaderPositionNames[adlhpAuto]);
+    Config.SetDeleteValue(Path+'Header/TabPosition',ADLTabPostionNames[TabPosition],
+                                                    ADLTabPostionNames[tpTop]);
+    Config.SetDeleteValue(Path+'Monitor',Monitor,0);
+    Config.SetDeleteValue(Path+'ChildCount',Count,0);
+    for i:=1 to Count do
+--- 1290,1296 ----
+                                                 ADLHeaderPositionNames[adlhpAuto]);
+    Config.SetDeleteValue(Path+'Header/TabPosition',ADLTabPostionNames[TabPosition],
+                                                    ADLTabPostionNames[tpTop]);
++   Config.SetDeleteValue(Path+'Minimized',Minimized,False);
+    Config.SetDeleteValue(Path+'Monitor',Monitor,0);
+    Config.SetDeleteValue(Path+'ChildCount',Count,0);
+    for i:=1 to Count do
