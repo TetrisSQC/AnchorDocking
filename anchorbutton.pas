@@ -9,40 +9,67 @@ uses
 
 
 type
- TAnchorBaseButton = class(TGraphicControl)
- private
-   FGlyphs: TBitmap;
-   FFocused: boolean;
-   FPressed: boolean;
-   FFirstRun: Boolean;
+  TAnchorBaseButton = class(TGraphicControl)
+  private
+    FGlyphs: TBitmap;
+    FFocused: boolean;
+    FPressed: boolean;
+    FLastResource: string;
 
-   procedure SetGlyphs(const ABitmap: TBitmap);
- protected
-   procedure Paint; override;
-   procedure MouseDown(Button: TMouseButton; Shift: TShiftState;
-     X, Y: integer); override;
-   procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: integer); override;
-   procedure MouseEnter; override;
-   procedure MouseLeave; override;
-   procedure SetEnabled(Value: boolean); override;
- public
-   constructor Create(AOwner: TComponent); override;
-   destructor Destroy; override;
-   property Glyphs: TBitmap read FGlyphs write SetGlyphs;
- end;
+    procedure SetGlyphs(const ABitmap: TBitmap);
+  protected
+    procedure Paint; override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState;
+      X, Y: integer); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: integer); override;
+    procedure MouseEnter; override;
+    procedure MouseLeave; override;
+    procedure SetEnabled(Value: boolean); override;
 
-implementation
+    procedure CalculatePreferredSize(var PreferredWidth, PreferredHeight: integer;
+      WithThemeSpace: boolean); override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
 
+    procedure LoadFromResourceName(const ResName: String);
+
+    property Glyphs: TBitmap read FGlyphs write SetGlyphs;
+  end;
+
+implementation uses Forms;
+
+// ANCHOR_CLOSE, ANCHOR_CLOSE_WIDE, ANCHOR_PIN, ANCHOR_UNPIN
 {$r anchordockbutton.res}
 
 { TAnchorBaseButton }
 constructor TAnchorBaseButton.Create(AOwner: TComponent);
 begin
   inherited;
-  Width := 23;
-  Height := 22;
   FGlyphs := TBitmap.Create;
-  FFirstRun := true;
+  AutoSize := true;
+end;
+
+
+procedure TAnchorBaseButton.CalculatePreferredSize(
+  var PreferredWidth, PreferredHeight: integer; WithThemeSpace: boolean);
+begin
+  if FGlyphs.Width > 0 then
+  begin
+    PreferredWidth := FGlyphs.Width div 4;
+    PreferredHeight := FGlyphs.Height;
+  end
+  else
+  begin
+    PreferredWidth := 23;
+    PreferredHeight := 22;
+  end;
+    {$IF defined(LCLGtk2) or defined(Carbon)}
+  Inc(PreferredWidth, 2);
+  Inc(PreferredHeight, 2);
+    {$ENDIF}
+  PreferredWidth := ScaleDesignToForm(PreferredWidth);
+  PreferredHeight := ScaleDesignToForm(PreferredHeight);
 end;
 
 destructor TAnchorBaseButton.Destroy;
@@ -51,7 +78,7 @@ begin
   inherited;
 end;
 
-procedure TAnchorBaseButton.paint;
+procedure TAnchorBaseButton.Paint;
 var
   index: integer;
   R: TRect;
@@ -69,13 +96,6 @@ begin
   end;
   w := FGlyphs.Width div 4;
   R := Rect(index * w, 0, (index + 1) * w, FGlyphs.Height);
-
-  if FFirstRun then
-  begin
-    FFirstRun := false;
-  Width := ScaleDesignToForm(Width);
-  Height := ScaleDesignToForm(Height);
-  end;
 
   Canvas.CopyRect(Rect(0, 0, Width, Height), FGlyphs.Canvas, R);
 end;
@@ -113,17 +133,30 @@ procedure TAnchorBaseButton.MouseUp(Button: TMouseButton; Shift: TShiftState;
 begin
   inherited;
   FPressed := False;
-
   invalidate;
 end;
 
 procedure TAnchorBaseButton.SetGlyphs(const ABitmap: TBitmap);
 begin
   FGlyphs.Assign(ABitmap);
-  //Width := FGlyphs.Width div 4;
+  AdjustSize;
   invalidate;
 end;
 
+procedure TAnchorBaseButton.LoadFromResourceName(const ResName: String);
+begin
+  if FLastResource=ResName then exit;
+  FLastResource := ResName;
+
+  FGlyphs.LoadFromResourceName(hinstance, ResName);
+
+  InvalidatePreferredSize;
+
+  if Assigned(GetParentDesignControl(self)) then
+   DoAutoSize;
+
+  invalidate;
+end;
 
 end.
 

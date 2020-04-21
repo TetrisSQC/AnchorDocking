@@ -6057,9 +6057,9 @@ begin
   if assigned(FMinimizeButton) then
   begin
     if HeaderParent.FMinimized then
-    FMinimizeButton.Glyphs.LoadFromResourceName(hinstance, 'ANCHOR_UNPIN')
+    FMinimizeButton.LoadFromResourceName('ANCHOR_UNPIN')
    else
-    FMinimizeButton.Glyphs.LoadFromResourceName(hinstance, 'ANCHOR_PIN');
+    FMinimizeButton.LoadFromResourceName('ANCHOR_PIN');
   end;
 end;
 
@@ -6132,6 +6132,12 @@ begin
       r.Top:=CloseButton.Top+CloseButton.Height+ButtonBorderSpacingAround
     else
       r.Right:=CloseButton.Left-ButtonBorderSpacingAround;
+
+    if Align in [alLeft, alRight] then
+     CloseButton.LoadFromResourceName('ANCHOR_CLOSE_WIDE')
+    else
+      CloseButton.LoadFromResourceName('ANCHOR_CLOSE')
+
   end;
 
   if MinimizeButton.IsControlVisible and (MinimizeButton.Parent=Self) then begin
@@ -6398,7 +6404,7 @@ begin
     ShowHint:=true;
     Hint:=adrsClose;
     OnClick:=@CloseButtonClick;
-    Glyphs.LoadFromResourceName(hinstance, 'ANCHOR_CLOSE');
+    LoadFromResourceName('ANCHOR_CLOSE');
     AutoSize:=true;
   end;
   FMinimizeButton:=TAnchorBaseButton.Create(Self);
@@ -6409,7 +6415,7 @@ begin
     Hint:=adrsMinimize;
     OnClick:=@MinimizeButtonClick;
     AutoSize:=true;
-    Glyphs.LoadFromResourceName(hinstance, 'ANCHOR_PIN');
+    LoadFromResourceName('ANCHOR_PIN');
   end;
   Align:=alTop;
   AutoSize:=true;
