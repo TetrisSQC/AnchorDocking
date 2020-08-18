@@ -99,8 +99,7 @@ unit AnchorDocking;
 interface
 
 uses
-Dialogs,
-Math, Classes, SysUtils, types,
+  Math, Classes, SysUtils, types,
   LCLType, LCLIntf, LCLProc,
   Controls, Forms, ExtCtrls, ComCtrls, Graphics, Themes, Menus, Buttons,
   LazConfigStorage, Laz2_XMLCfg, LazFileCache,
@@ -154,8 +153,9 @@ type
 
   TAnchorDockHeader = class(TCustomPanel)
   private
-    FCloseButton: TAnchorBaseButton;
-    FMinimizeButton: TAnchorBaseButton;
+    FCloseButton: TGraphicControl;//TAnchorBaseButton;
+    FMinimizeButton: TGraphicControl;//TAnchorBaseButton;
+
     FHeaderPosition: TADLHeaderPosition;
     fFocused:Boolean;
     fUseTimer:Boolean;
@@ -186,8 +186,8 @@ type
     procedure PopupMenuPopup(Sender: TObject); virtual;
   public
     constructor Create(TheOwner: TComponent); override;
-    property CloseButton: TAnchorBaseButton read FCloseButton;
-    property MinimizeButton: TAnchorBaseButton read FMinimizeButton;
+    property CloseButton: TGraphicControl read FCloseButton;
+    property MinimizeButton: TGraphicControl read FMinimizeButton;
     property HeaderPosition: TADLHeaderPosition read FHeaderPosition write SetHeaderPosition;
     property BevelOuter default bvNone;
   end;
@@ -267,6 +267,7 @@ type
     procedure MoveRightButtonClick(Sender: TObject); virtual;
     procedure MoveRightMostButtonClick(Sender: TObject); virtual;
     procedure TabPositionClick(Sender: TObject); virtual;
+    function GetPageClass: TCustomPageClass;override;
   public
     constructor Create(TheOwner: TComponent); override;
     procedure UpdateDockCaption(Exclude: TControl = nil); override;
@@ -809,7 +810,81 @@ function GetEnclosingControlRect(ControlList: TFPlist;
                                  out ARect: TAnchorControlsRect): boolean;
 function GetEnclosedControls(const ARect: TAnchorControlsRect): TFPList;
 
+var UseTheming: Boolean = false;
+
 implementation
+
+type
+  TAnchorDockCloseButton = class(TCustomSpeedButton)
+  protected
+    function GetDrawDetails: TThemedElementDetails; override;
+    procedure CalculatePreferredSize(var PreferredWidth,
+           PreferredHeight: integer; {%H-}WithThemeSpace: Boolean); override;
+  end;
+
+  TAnchorDockMinimizeButton = class(TAnchorDockCloseButton)
+  protected
+    function GetDrawDetails: TThemedElementDetails; override;
+  end;
+
+
+function TAnchorDockCloseButton.GetDrawDetails: TThemedElementDetails;
+
+function WindowPart: TThemedWindow;
+  begin
+    // no check states available
+    Result := twSmallCloseButtonNormal;
+    if not IsEnabled then
+      Result := twSmallCloseButtonDisabled
+    else
+    if FState in [bsDown, bsExclusive] then
+      Result := twSmallCloseButtonPushed
+    else
+    if FState = bsHot then
+      Result := twSmallCloseButtonHot
+    else
+      Result := twSmallCloseButtonNormal;
+  end;
+
+begin
+  Result := ThemeServices.GetElementDetails(WindowPart);
+end;
+
+procedure TAnchorDockCloseButton.CalculatePreferredSize(var PreferredWidth,
+  PreferredHeight: integer; WithThemeSpace: Boolean);
+begin
+  with ThemeServices.GetDetailSize(ThemeServices.GetElementDetails(twSmallCloseButtonNormal)) do
+  begin
+    PreferredWidth:=cx;
+    PreferredHeight:=cy;
+    {$IF defined(LCLGtk2) or defined(Carbon)}
+    inc(PreferredWidth,2);
+    inc(PreferredHeight,2);
+    {$ENDIF}
+  end;
+end;
+
+function TAnchorDockMinimizeButton.GetDrawDetails: TThemedElementDetails;
+
+function WindowPart: TThemedWindow;
+  begin
+    // no check states available
+    Result := twMinButtonNormal;
+    if not IsEnabled then
+      Result := {$IFDEF LCLGtk2}twMDIRestoreButtonDisabled{$ELSE}twMinButtonDisabled{$ENDIF}
+    else
+    if FState in [bsDown, bsExclusive] then
+      Result := {$IFDEF LCLGtk2}twMDIRestoreButtonPushed{$ELSE}twMinButtonPushed{$ENDIF}
+    else
+    if FState = bsHot then
+      Result := {$IFDEF LCLGtk2}twMDIRestoreButtonHot{$ELSE}twMinButtonHot{$ENDIF}
+    else
+      Result := {$IFDEF LCLGtk2}twMDIRestoreButtonNormal{$ELSE}twMinButtonNormal{$ENDIF};
+  end;
+
+begin
+  Result := ThemeServices.GetElementDetails(WindowPart);
+end;
 
 function StrToADHeaderStyle(const s: string): TADHeaderStyle;
 begin
@@ -2778,7 +2853,9 @@ var
 begin
   if FShowHeader=AValue then exit;
   FShowHeader:=AValue;
-  for i:=0 to ComponentCount-1 do begin
+  for i:=0 to ComponentCount-1 do
+  if Components[i] is TAnchorDockHostSite then
+  begin
     Site:=TAnchorDockHostSite(Components[i]);
     if not (Site is TAnchorDockHostSite) then continue;
     if (Site.Header<>nil) then begin
@@ -3071,6 +3148,15 @@ end;
 
 procedure TAnchorDockMaster.MakeDockable(AControl: TControl; Show: boolean;
   BringToFront: boolean; AddDockHeader: boolean);
+
+ function AdjustRect(const ARect: TRect): TRect;
+ begin
+  result.Left := MIN(MAX(-7,ARect.left-Screen.DesktopLeft),Screen.DesktopWidth-ARect.Width+7)+Screen.DesktopLeft;
+  result.top := MIN(MAX(0,ARect.top),Screen.DesktopHeight-ARect.Height);
+  result.Width := MIN(ARect.Width,Screen.DesktopWidth);
+  result.Height := MIN(ARect.Height,Screen.DesktopHeight);
+ end;
+
 var
   Site: TAnchorDockHostSite;
 begin
@@ -3101,7 +3187,7 @@ begin
       Site:=CreateSite;
       try
         try
-          Site.BoundsRect:=AControl.BoundsRect;
+          Site.BoundsRect:=AdjustRect(AControl.BoundsRect);
           ClearLayoutProperties(AControl);
           // dock
           AControl.ManualDock(Site);
@@ -6054,12 +6140,12 @@ var
   HeaderParent:TAnchorDockHostSite;
 begin
   TWinControl(HeaderParent):=Parent;
-  if assigned(FMinimizeButton) then
+  if assigned(FMinimizeButton) and (FMinimizeButton is TAnchorBaseButton) then
   begin
     if HeaderParent.FMinimized then
-    FMinimizeButton.LoadFromResourceName('ANCHOR_UNPIN')
+    TAnchorBaseButton(FMinimizeButton).LoadFromResourceName('ANCHOR_UNPIN')
    else
-    FMinimizeButton.LoadFromResourceName('ANCHOR_PIN');
+    TAnchorBaseButton(FMinimizeButton).LoadFromResourceName('ANCHOR_PIN');
   end;
 end;
 
@@ -6133,11 +6219,13 @@ begin
     else
       r.Right:=CloseButton.Left-ButtonBorderSpacingAround;
 
-    if Align in [alLeft, alRight] then
-     CloseButton.LoadFromResourceName('ANCHOR_CLOSE_WIDE')
-    else
-      CloseButton.LoadFromResourceName('ANCHOR_CLOSE')
-
+    if CloseButton is TAnchorBaseButton then
+    begin
+     if (Align in [alLeft, alRight]) then
+      TAnchorBaseButton(CloseButton).LoadFromResourceName('ANCHOR_CLOSE_WIDE')
+     else
+      TAnchorBaseButton(CloseButton).LoadFromResourceName('ANCHOR_CLOSE')
+    end;
   end;
 
   if MinimizeButton.IsControlVisible and (MinimizeButton.Parent=Self) then begin
@@ -6397,17 +6485,29 @@ begin
   FHeaderPosition:=adlhpAuto;
   BevelOuter:=bvNone;
   BorderWidth:=0;
-  FCloseButton:=TAnchorBaseButton.Create(Self);
-  with FCloseButton do begin
+
+  if UseTheming then
+  begin
+    FCloseButton := TAnchorDockCloseButton.Create(Self);
+    FMinimizeButton := TAnchorDockMinimizeButton.Create(Self);
+  end else
+  begin
+   FCloseButton := TAnchorBaseButton.Create(Self);
+   FMinimizeButton := TAnchorBaseButton.Create(Self);
+  end;
+
+  with FCloseButton do
+    begin
     Name:='CloseButton';
     Parent:=Self;
     ShowHint:=true;
     Hint:=adrsClose;
     OnClick:=@CloseButtonClick;
-    LoadFromResourceName('ANCHOR_CLOSE');
     AutoSize:=true;
   end;
-  FMinimizeButton:=TAnchorBaseButton.Create(Self);
+  if FCloseButton is TAnchorBaseButton then
+   TAnchorBaseButton(FCloseButton).LoadFromResourceName('ANCHOR_CLOSE');
+
   with FMinimizeButton do begin
     Name:='MinimizeButton';
     Parent:=Self;
@@ -6415,8 +6515,11 @@ begin
     Hint:=adrsMinimize;
     OnClick:=@MinimizeButtonClick;
     AutoSize:=true;
-    LoadFromResourceName('ANCHOR_PIN');
   end;
+
+  if FMinimizeButton is TAnchorBaseButton then
+   TAnchorBaseButton(FMinimizeButton).LoadFromResourceName('ANCHOR_PIN');
+
   Align:=alTop;
   AutoSize:=true;
   ShowHint:=true;
@@ -7425,10 +7528,15 @@ end;
 
 constructor TAnchorDockPageControl.Create(TheOwner: TComponent);
 begin
-  PageClass:=DockMaster.PageClass;
   inherited Create(TheOwner);
   PopupMenu:=DockMaster.GetPopupMenu;
 end;
+
+function TAnchorDockPageControl.GetPageClass: TCustomPageClass;
+begin
+  Result:=DockMaster.PageClass;
+end;
+
 
 { TAnchorDockOverlappingForm }
 

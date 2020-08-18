@@ -68,8 +68,8 @@ begin
   Inc(PreferredWidth, 2);
   Inc(PreferredHeight, 2);
     {$ENDIF}
-  PreferredWidth := ScaleDesignToForm(PreferredWidth);
-  PreferredHeight := ScaleDesignToForm(PreferredHeight);
+  PreferredWidth := Scale96ToForm(PreferredWidth);
+  PreferredHeight := Scale96ToForm(PreferredHeight);
 end;
 
 destructor TAnchorBaseButton.Destroy;
