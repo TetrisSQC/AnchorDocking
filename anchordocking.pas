@@ -810,7 +810,7 @@ function GetEnclosingControlRect(ControlList: TFPlist;
                                  out ARect: TAnchorControlsRect): boolean;
 function GetEnclosedControls(const ARect: TAnchorControlsRect): TFPList;
 
-var UseTheming: Boolean = false;
+var UseTheming: Boolean = true;
 
 implementation
 
@@ -3187,6 +3187,9 @@ begin
       Site:=CreateSite;
       try
         try
+          if AControl is TCustomForm then
+           Site.ShowInTaskBar:=TCustomForm(AControl).ShowInTaskbar;
+
           Site.BoundsRect:=AdjustRect(AControl.BoundsRect);
           ClearLayoutProperties(AControl);
           // dock
